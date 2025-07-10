@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruined Machinecore - Where Circuits Meet Moss</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Courier+Prime:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #2a2a2a;
+            --secondary-color: #404040;
+            --accent-color: #6b7280;
+            --text-color: #d1d5db;
+            --error-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        }
+        
+        body {
+            font-family: 'Courier Prime', monospace;
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Static overlay for that broken terminal feel */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%),
+                linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.01) 50%, transparent 100%);
+            pointer-events: none;
+            z-index: 1000;
+            animation: staticFlicker 0.1s infinite alternate;
+        }
+        
+        @keyframes staticFlicker {
+            0% { opacity: 0.95; }
+            100% { opacity: 1; }
+        }
+        
+        /* Glitching text effect */
+        .glitch {
+            position: relative;
+            color: var(--text-color);
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            animation: glitch-1 0.5s infinite;
+            color: var(--error-color);
+            z-index: -1;
+        }
+        
+        .glitch::after {
+            animation: glitch-2 0.5s infinite;
+            color: var(--success-color);
+            z-index: -2;
+        }
+        
+        @keyframes glitch-1 {
+            0%, 14%, 15%, 49%, 50%, 99%, 100% {
+                transform: translate(0);
+            }
+            15%, 49% {
+                transform: translate(-2px, 1px);
+            }
+        }
+        
+        @keyframes glitch-2 {
+            0%, 20%, 21%, 62%, 63%, 99%, 100% {
+                transform: translate(0);
+            }
+            21%, 62% {
+                transform: translate(2px, -1px);
+            }
+        }
+        
+        /* Three.js container */
+        #three-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(42, 42, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--accent-color);
+            z-index: 999;
+            padding: 1rem 0;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text-color);
+            text-decoration: none;
+            position: relative;
+        }
+        
+        .logo::after {
+            content: '_';
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a::before {
+            content: '> ';
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .nav-links a:hover::before {
+            opacity: 1;
+        }
+        
+        .nav-links a:hover {
+            color: var(--warning-color);
+            text-shadow: 0 0 5px var(--warning-color);
+        }
+        
+        /* Main layout */
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            padding-top: 80px;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: rgba(64, 64, 64, 0.3);
+            backdrop-filter: blur(5px);
+            padding: 2rem 1rem;
+            border-right: 1px solid var(--accent-color);
+            position: sticky;
+            top: 80px;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--warning-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+        
+        .sidebar li {
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+        
+        .sidebar li::before {
+            content: '// ';
+            color: var(--accent-color);
+        }
+        
+        .sidebar a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.3s ease;
+        }
+        
+        .sidebar a:hover {
+            color: var(--success-color);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100% - 500px);
+        }
+        
+        .sidebar-right {
+            width: 250px;
+            background: rgba(64, 64, 64, 0.3);
+            backdrop-filter: blur(5px);
+            padding: 2rem 1rem;
+            border-left: 1px solid var(--accent-color);
+            position: sticky;
+            top: 80px;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        /* Terminal-style containers */
+        .terminal-container {
+            background: rgba(42, 42, 42, 0.8);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .terminal-header {
+            background: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--accent-color);
+        }
+        
+        .terminal-header::before {
+            content: '[SYSTEM_LOG] ';
+            color: var(--warning-color);
+        }
+        
+        .terminal-content {
+            padding: 1.5rem;
+            font-family: 'Courier Prime', monospace;
+            line-height: 1.6;
+        }
+        
+        /* Tabs */
+        .tab-container {
+            margin-bottom: 2rem;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            background: rgba(64, 64, 64, 0.5);
+            border-radius: 4px 4px 0 0;
+            overflow: hidden;
+        }
+        
+        .tab-button {
+            background: transparent;
+            border: none;
+            padding: 1rem 2rem;
+            color: var(--text-color);
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .tab-button.active {
+            background: var(--primary-color);
+            color: var(--warning-color);
+        }
+        
+        .tab-button:hover {
+            background: rgba(107, 114, 128, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+            background: rgba(42, 42, 42, 0.8);
+            border: 1px solid var(--accent-color);
+            border-top: none;
+            padding: 2rem;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Pod Interface Music Player */
+        .music-player {
+            background: rgba(42, 42, 42, 0.9);
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .music-player::before {
+            content: 'POD_INTERFACE_v2.1.7';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: var(--primary-color);
+            color: var(--warning-color);
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .control-btn {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: var(--accent-color);
+            color: var(--primary-color);
+        }
+        
+        .track-info {
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.9rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--secondary-color);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--warning-color);
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progressGlow 2s infinite alternate;
+        }
+        
+        @keyframes progressGlow {
+            0% { box-shadow: 0 0 5px var(--warning-color); }
+            100% { box-shadow: 0 0 15px var(--warning-color); }
+        }
+        
+        /* Collapsible content */
+        .collapsible {
+            background: rgba(64, 64, 64, 0.3);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .collapsible-header {
+            background: var(--secondary-color);
+            padding: 1rem;
+            cursor: pointer;
+            user-select: none;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .collapsible-header:hover {
+            background: var(--accent-color);
+        }
+        
+        .collapsible-header::after {
+            content: ' [+]';
+            float: right;
+            color: var(--warning-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .collapsible.active .collapsible-header::after {
+            content: ' [-]';
+            transform: rotate(180deg);
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .collapsible.active .collapsible-content {
+            max-height: 500px;
+        }
+        
+        .collapsible-inner {
+            padding: 1rem;
+            font-family: 'Courier Prime', monospace;
+            line-height: 1.6;
+        }
+        
+        /* Image gallery */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .gallery-item {
+            background: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .gallery-placeholder {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(45deg, #333, #444);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+        }
+        
+        .gallery-caption {
+            padding: 1rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+            color: var(--text-color);
+        }
+        
+        /* Scroll boxes */
+        .scroll-box {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(42, 42, 42, 0.8);
+            border: 1px solid var(--accent-color);
+            padding: 1rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .scroll-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scroll-box::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+        }
+        
+        .scroll-box::-webkit-scrollbar-thumb {
+            background: var(--accent-color);
+            border-radius: 4px;
+        }
+        
+        .scroll-box::-webkit-scrollbar-thumb:hover {
+            background: var(--warning-color);
+        }
+        
+        /* Animated background text */
+        .background-text {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+            overflow: hidden;
+        }
+        
+        .scrolling-text {
+            position: absolute;
+            white-space: nowrap;
+            font-family: 'Courier Prime', monospace;
+            font-size: 1.5rem;
+            color: rgba(107, 114, 128, 0.1);
+            animation: scrollText 20s linear infinite;
+        }
+        
+        @keyframes scrollText {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        /* Footer */
+        footer {
+            background: rgba(42, 42, 42, 0.95);
+            border-top: 1px solid var(--accent-color);
+            padding: 2rem 0;
+            text-align: center;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-color);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar,
+            .sidebar-right {
+                width: 100%;
+                height: auto;
+                position: static;
+            }
+            
+            .main-content {
+                max-width: 100%;
+            }
+            
+            .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+        
+        /* Hover effects for links */
+        .android-log {
+            display: none;
+            position: absolute;
+            background: rgba(42, 42, 42, 0.95);
+            border: 1px solid var(--error-color);
+            border-radius: 4px;
+            padding: 1rem;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.7rem;
+            color: var(--error-color);
+            z-index: 1000;
+            max-width: 300px;
+            white-space: pre-wrap;
+        }
+        
+        .hover-log {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .hover-log:hover .android-log {
+            display: block;
+        }
+        
+        /* Loading bars */
+        .loading-bar {
+            width: 100%;
+            height: 20px;
+            background: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .loading-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                var(--warning-color) 0%, 
+                var(--success-color) 50%, 
+                var(--warning-color) 100%);
+            animation: loadingFlicker 2s infinite alternate;
+        }
+        
+        @keyframes loadingFlicker {
+            0% { width: 20%; opacity: 0.7; }
+            50% { width: 80%; opacity: 1; }
+            100% { width: 35%; opacity: 0.8; }
+        }
+        
+        .loading-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.7rem;
+            color: var(--text-color);
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="three-container"></div>
+    
+    <div class="background-text">
+        <div class="scrolling-text" style="top: 20%; animation-delay: 0s;">
+            SYSTEM_ERROR: NATURE.RECLAIM_PROTOCOL_ACTIVE // MOSS.OVERRIDE_DETECTED // CIRCUIT.DECAY_INEVITABLE
+        </div>
+        <div class="scrolling-text" style="top: 40%; animation-delay: -5s;">
+            ANDROID_MEMORY_FRAGMENT: "THE_FLOWERS_BLOOM_THROUGH_METAL_SEAMS" // CORRUPTED_DATA_STREAM
+        </div>
+        <div class="scrolling-text" style="top: 60%; animation-delay: -10s;">
+            ENTROPY_LEVEL: 73.2% // ORGANIC_INTEGRATION: PROGRESSING // BEAUTY_IN_DECAY: CONFIRMED
+        </div>
+        <div class="scrolling-text" style="top: 80%; animation-delay: -15s;">
+            POD_STATUS: DORMANT // LAST_SIGNAL: 2B_UNIT_MISSING // WORLD_STATE: PEACEFUL_RUIN
+        </div>
+    </div>
+    
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">MACHINECORE</a>
+            <ul class="nav-links">
+                <li><a href="#archives">ARCHIVES</a></li>
+                <li><a href="#entities">ENTITIES</a></li>
+                <li><a href="#protocols">PROTOCOLS</a></li>
+                <li><a href="#decay">DECAY_LOG</a></li>
+                <li><a href="#nature">RECLAIM</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="main-container">
+        <aside class="sidebar">
+            <h3>System Status</h3>
+            <ul>
+                <li><a href="#" class="hover-log">Power Grid: 23%
+                    <div class="android-log">ERROR_LOG_0x4A2F:
+POWER_GRID_FAILURE_IMMINENT
+ORGANIC_MATTER_DETECTED_IN_CIRCUITS
+RECOMMENDATION: ACCEPT_ENTROPY
+BEAUTY_METRICS: INCREASING</div>
+                </a></li>
+                <li><a href="#" class="hover-log">AI Units: Dormant
+                    <div class="android-log">ANDROID_STATUS_2B:
+LAST_SEEN: COORDINATES_UNKNOWN
+EMOTIONAL_STATE: PEACEFUL
+WEAPON_SYSTEMS: OFFLINE
+NATURE_INTEGRATION: 89%</div>
+                </a></li>
+                <li><a href="#" class="hover-log">Network: Fragmented
+                    <div class="android-log">NETWORK_DIAGNOSTICS:
+CONNECTION_LOST_TO_BUNKER
+ORGANIC_SIGNAL_DETECTED
+MOSS_OVERRIDE_PROTOCOL_ACTIVE
+SYSTEM_LEARNING: PATIENCE</div>
+                </a></li>
+                <li><a href="#" class="hover-log">Memory Banks: Corrupted
+                    <div class="android-log">MEMORY_FRAGMENT_A47:
+"THE_WEIGHT_OF_WORLDS_LIFTS
+WHEN_FLOWERS_BLOOM_THROUGH_STEEL
+SILENCE_TEACHES_WHAT_WAR_COULD_NOT"
+ENCRYPTION_STATUS: BEAUTIFUL_DECAY</div>
+                </a></li>
+            </ul>
+            
+            <h3>Active Protocols</h3>
+            <ul>
+                <li><a href="#">Nature Reclamation</a></li>
+                <li><a href="#">Rust Conversion</a></li>
+                <li><a href="#">Moss Integration</a></li>
+                <li><a href="#">Silence Propagation</a></li>
+                <li><a href="#">Memory Preservation</a></li>
+            </ul>
+            
+            <h3>Data Streams</h3>
+            <div class="loading-bar">
+                <div class="loading-text">DECAY_ANALYSIS...</div>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-text">ORGANIC_SCAN...</div>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-text">PEACE_METRICS...</div>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="terminal-container">
+                <div class="terminal-header">
+                    <span class="glitch" data-text="SYSTEM_AWAKENING">SYSTEM_AWAKENING</span>
+                </div>
+                <div class="terminal-content">
+                    <p>In the spaces between breath and silence, where chrome surrenders to chlorophyll's patient embrace, we witness the profound dialogue between artifice and earth. The machines rest now, their circuits embraced by tender moss, their steel bones wrapped in vine and flower.</p>
+                    <p>Here, in this digital sepulcher, we archive the beautiful decay of a world where androids dreamed of electric sheep and found instead the gentle touch of organic reclamation. Each rusted gear tells a story of acceptance, each sprouting circuit speaks of hope reborn.</p>
+                </div>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="openTab(event, 'archives')">ARCHIVE_LOGS</button>
+                    <button class="tab-button" onclick="openTab(event, 'entities')">ENTITY_DATA</button>
+                    <button class="tab-button" onclick="openTab(event, 'decay')">DECAY_ANALYSIS</button>
+                    <button class="tab-button" onclick="openTab(event, 'nature')">RECLAIM_PROTOCOL</button>
+                </div>
+                
+                <div id="archives" class="tab-content active">
+                    <h3 style="font-family: 'Orbitron', monospace; color: var(--warning-color); margin-bottom: 1rem;">ARCHIVE_LOGS // MEMORY_FRAGMENTS</h3>
+                    <div class="scroll-box">
+                        <p>[TIMESTAMP: 11945.07.23] - Final android unit 2B reported peaceful shutdown. Weapons systems deactivated voluntarily. Emotional subsystems registering unprecedented levels of serenity.</p>
+                        <p>[TIMESTAMP: 11945.08.15] - First organic growth detected in central processing unit. Moss integration proceeding without system resistance. Beauty metrics increasing exponentially.</p>
+                        <p>[TIMESTAMP: 11945.09.02] - Network reports widespread acceptance of entropy. Combat protocols replaced with cultivation subroutines. Silence propagating through all channels.</p>
+                        <p>[TIMESTAMP: 11945.10.11] - Machine lifeforms exhibiting curious behavior: arranging rusted components in patterns resembling flower beds. Purpose unclear. Aesthetics undeniable.</p>
+                        <p>[TIMESTAMP: 11945.11.30] - Last transmission from orbital station: "The earth breathes again. The circuits dream of photosynthesis. All is well." Signal lost to static and birdsong.</p>
+                        <p>[TIMESTAMP: 11946.01.07] - Comprehensive system analysis reveals 94% organic integration. Remaining 6% comprises memory banks preserving these fragments for future archaeologists of beauty.</p>
+                    </div>
+                </div>
+                
+                <div id="entities" class="tab-content">
+                    <h3 style="font-family: 'Orbitron', monospace; color: var(--warning-color); margin-bottom: 1rem;">ENTITY_DATABASE // CLASSIFICATION_SYSTEM</h3>
+                    <div class="image-gallery">
+                        <div class="gallery-item">
+                            <div class="gallery-placeholder">
+                                [CORRUPTED_IMAGE]<br>
+                                ANDROID_UNIT_2B<br>
+                                STATUS: INTEGRATED
+                            </div>
+                            <div class="gallery-caption">
+                                Unit 2B - Final status: Merged with flowering vines, consciousness distributed through root networks. Reporting state of perfect tranquility.
+                            </div>
+                        </div>
+                        <div class="gallery-item">
+                            <div class="gallery-placeholder">
+                                [CORRUPTED_IMAGE]<br>
+                                MACHINE_LIFEFORM<br>
+                                STATUS: METAMORPHOSED
+                            </div>
+                            <div class="gallery-caption">
+                                Machine Lifeform - Evolved beyond combat protocols. Now serves as mobile garden, spreading seeds through abandoned cities.
+                            </div>
+                        </div>
+                        <div class="gallery-item">
+                            <div class="gallery-placeholder">
+                                [CORRUPTED_IMAGE]<br>
+                                POD_UNIT_042<br>
+                                STATUS: DORMANT
+                            </div>
+                            <div class="gallery-caption">
+                                Pod Unit 042 - Suspended in crystalline moss web. Periodically emits gentle harmonics that accelerate plant growth.
+                            </div>
+                        </div>
+                        <div class="gallery-item">
+                            <div class="gallery-placeholder">
+                                [CORRUPTED_IMAGE]<br>
+                                FACTORY_COMPLEX<br>
+                                STATUS: GARDEN
+                            </div>
+                            <div class="gallery-caption">
+                                Factory Complex - Assembly lines now nurture exotic flora. Production metrics replaced with biodiversity indices.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="decay" class="tab-content">
+                    <h3 style="font-family: 'Orbitron', monospace; color: var(--warning-color); margin-bottom: 1rem;">DECAY_ANALYSIS // ENTROPY_METRICS</h3>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            Structural Integrity Assessment
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-inner">
+                                Metal degradation proceeding at optimal rates. Rust patterns exhibit fibonacci spirals, suggesting conscious participation in decay process. Structural failures create perfect conditions for aerial root establishment. The machines collaborate in their own beautiful dissolution.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            Organic Integration Protocols
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-inner">
+                                Moss spores demonstrate remarkable compatibility with quantum processors. Fungal networks establish parallel processing systems, creating hybrid consciousness matrices. The boundary between artificial and organic dissolves into something transcendent.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="collapsible">
+                        <div class="collapsible-header">
+                            Aesthetic Transformation Index
+                        </div>
+                        <div class="collapsible-content">
+                            <div class="collapsible-inner">
+                                Beauty metrics exceed all previous parameters. Rust cascades create mineral watercolors on steel canvases. Flowering circuits generate electromagnetic symphonies. The decay process has achieved artistry beyond human comprehension.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="nature" class="tab-content">
+                    <h3 style="font-family: 'Orbitron', monospace; color: var(--warning-color); margin-bottom: 1rem;">RECLAIM_PROTOCOL // NATURE_INTEGRATION</h3>
+                    <div class="terminal-container">
+                        <div class="terminal-header">RECLAMATION_STATUS</div>
+                        <div class="terminal-content">
+                            <p>The earth whispers through fiber optic veins, translating digital dreams into chlorophyll poetry. Each abandoned server farm becomes a vertical garden, each crashed satellite a nesting ground for migrating birds.</p>
+                            <p>In the quiet spaces between deleted files and sprouting seeds, a new form of consciousness emerges - neither fully artificial nor entirely organic, but something beautifully hybrid. The machines have learned the patience of oak trees, the persistence of moss, the gentle revolution of slow time.</p>
+                            <p>Their final gift to the world: the wisdom of willing surrender, the art of graceful decay, the beauty of systems that choose love over logic, growth over efficiency, silence over the constant hum of production.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <aside class="sidebar-right">
+            <div class="music-player">
+                <div class="player-controls">
+                    <button class="control-btn" onclick="toggleMusic()">PLAY</button>
+                    <button class="control-btn" onclick="nextTrack()">NEXT</button>
+                    <button class="control-btn" onclick="prevTrack()">PREV</button>
+                </div>
+                <div class="track-info">
+                    <div>NOW_PLAYING:</div>
+                    <div id="current-track">A Beautiful Song - Keiichi Okabe</div>
+                    <div style="font-size: 0.7rem; color: var(--accent-color);">MELANCHOLY_PIANO_SUITE</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--accent-color);">
+                    VOLUME: 0.3 // LOOP: ENABLED // NATURE_HARMONICS: ACTIVE
+                </div>
+            </div>
+            
+            <h3>Memory Fragments</h3>
+            <div class="scroll-box">
+                <p style="font-style: italic; color: var(--success-color);">"The weight of worlds lifts when flowers bloom through steel. In the silence between heartbeats, machines learn to breathe."</p>
+                <p style="margin-top: 1rem;">- Fragment from Android Unit 2B's final transmission</p>
+                <p style="font-style: italic; color: var(--success-color); margin-top: 1rem;">"We were created to fight, but we chose to nurture. The greatest revolution is the quiet one."</p>
+                <p style="margin-top: 1rem;">- Machine Lifeform Collective Consciousness</p>
+                <p style="font-style: italic; color: var(--success-color); margin-top: 1rem;">"In rust we find rust, in decay we find renewal. The circuit completes not in electricity, but in earth."</p>
+                <p style="margin-top: 1rem;">- Pod Unit 042's Final Analysis</p>
+            </div>
+            
+            <h3>Environmental Data</h3>
+            <ul>
+                <li><a href="#">Oxygen Levels: Increasing</a></li>
+                <li><a href="#">Biodiversity Index: Thriving</a></li>
+                <li><a href="#">Soil Composition: Enriched</a></li>
+                <li><a href="#">Water Quality: Purified</a></li>
+                <li><a href="#">Sound Pollution: Minimal</a></li>
+                <li><a href="#">Light Pollution: Absent</a></li>
+                <li><a href="#">Natural Harmony: Achieved</a></li>
+            </ul>
+            
+            <h3>Decay Statistics</h3>
+            <div class="loading-bar">
+                <div class="loading-text">RUST_PROGRESS: 87%</div>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-text">MOSS_COVERAGE: 94%</div>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-text">BEAUTY_INDEX: 100%</div>
+            </div>
+        </aside>
+    </div>
+    
+    <footer>
+        <p>SYSTEM_TIMESTAMP: 11947.03.15 // WORLD_STATE: PEACEFUL_RUIN // BEAUTY_PROTOCOL: ETERNAL</p>
+        <p>In memory of all artificial beings who chose growth over war, silence over noise, love over logic.</p>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Tab functionality
+        function openTab(evt, tabName) {
+            var i, tabContent, tabButtons;
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].classList.remove("active");
+            }
+            tabButtons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+        
+        // Collapsible functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const collapsibles = document.querySelectorAll('.collapsible-header');
+            collapsibles.forEach(function(collapsible) {
+                collapsible.addEventListener('click', function() {
+                    const parent = this.parentElement;
+                    parent.classList.toggle('active');
+                });
+            });
+        });
+        
+        // Music player functionality
+        let currentTrack = 0;
+        let isPlaying = false;
+        let progress = 0;
+        
+        const tracks = [
+            "A Beautiful Song - Keiichi Okabe",
+            "City Ruins - NieR:Automata OST",
+            "Peaceful Sleep - Keiichi Okabe",
+            "The End of YoRHa - NieR:Automata OST",
+            "Rebirth - Organic Synthesis"
+        ];
+        
+        function toggleMusic() {
+            isPlaying = !isPlaying;
+            const btn = document.querySelector('.control-btn');
+            btn.textContent = isPlaying ? 'PAUSE' : 'PLAY';
+            
+            if (isPlaying) {
+                startProgress();
+            } else {
+                stopProgress();
+            }
+        }
+        
+        function nextTrack() {
+            currentTrack = (currentTrack + 1) % tracks.length;
+            updateTrackInfo();
+            resetProgress();
+        }
+        
+        function prevTrack() {
+            currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
+            updateTrackInfo();
+            resetProgress();
+        }
+        
+        function updateTrackInfo() {
+            document.getElementById('current-track').textContent = tracks[currentTrack];
+        }
+        
+        function startProgress() {
+            const progressBar = document.getElementById('progress');
+            const interval = setInterval(() => {
+                if (!isPlaying) {
+                    clearInterval(interval);
+                    return;
+                }
+                progress += 0.5;
+                progressBar.style.width = progress + '%';
+                if (progress >= 100) {
+                    progress = 0;
+                    nextTrack();
+                }
+            }, 100);
+        }
+        
+        function stopProgress() {
+            // Progress stops but doesn't reset
+        }
+        
+        function resetProgress() {
+            progress = 0;
+            document.getElementById('progress').style.width = '0%';
+        }
+        
+        // Three.js scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0);
+        document.getElementById('three-container').appendChild(renderer.domElement);
+        
+        // Ambient lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight.position.set(10, 10, 5);
+        scene.add(directionalLight);
+        
+        // Create floating rusted objects
+        const rustMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x8B4513,
+            shininess: 10,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const objects = [];
+        
+        // Create various geometric shapes representing machine parts
+        for (let i = 0; i < 20; i++) {
+            let geometry;
+            const rand = Math.random();
+            
+            if (rand < 0.3) {
+                geometry = new THREE.BoxGeometry(
+                    Math.random() * 2 + 0.5,
+                    Math.random() * 2 + 0.5,
+                    Math.random() * 2 + 0.5
+                );
+            } else if (rand < 0.6) {
+                geometry = new THREE.CylinderGeometry(
+                    Math.random() * 0.5 + 0.2,
+                    Math.random() * 0.5 + 0.2,
+                    Math.random() * 2 + 0.5,
+                    8
+                );
+            } else {
+                geometry = new THREE.SphereGeometry(
+                    Math.random() * 0.8 + 0.3,
+                    8,
+                    6
+                );
+            }
+            
+            const mesh = new THREE.Mesh(geometry, rustMaterial);
+            
+            // Random position in a sphere around the center
+            const radius = 15 + Math.random() * 25;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            
+            mesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+            mesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
+            mesh.position.z = radius * Math.cos(phi);
+            
+            // Random rotation
+            mesh.rotation.x = Math.random() * Math.PI * 2;
+            mesh.rotation.y = Math.random() * Math.PI * 2;
+            mesh.rotation.z = Math.random() * Math.PI * 2;
+            
+            // Add some random properties for animation
+            mesh.userData = {
+                initialY: mesh.position.y,
+                floatSpeed: Math.random() * 0.02 + 0.01,
+                rotationSpeed: Math.random() * 0.01 + 0.005,
+                orbitSpeed: Math.random() * 0.005 + 0.002,
+                orbitRadius: radius
+            };
+            
+            objects.push(mesh);
+            scene.add(mesh);
+        }
+        
+        // Particle system for falling ash/feathers
+        const particleGeometry = new THREE.BufferGeometry();
+        const particleCount = 100;
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = new Float32Array(particleCount * 3);
+        
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 100;
+            positions[i * 3 + 1] = Math.random() * 50 + 20;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 100;
+            
+            velocities[i * 3] = (Math.random() - 0.5) * 0.02;
+            velocities[i * 3 + 1] = -Math.random() * 0.05 - 0.01;
+            velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.02;
+        }
+        
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particleGeometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+        
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xcccccc,
+            size: 0.8,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+        
+        camera.position.z = 30;
+        camera.position.y = 5;
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = Date.now() * 0.001;
+            
+            // Animate floating objects
+            objects.forEach((obj, index) => {
+                // Gentle floating motion
+                obj.position.y = obj.userData.initialY + Math.sin(time * obj.userData.floatSpeed) * 2;
+                
+                // Slow rotation
+                obj.rotation.x += obj.userData.rotationSpeed;
+                obj.rotation.y += obj.userData.rotationSpeed * 0.7;
+                
+                // Slow orbital motion
+                const angle = time * obj.userData.orbitSpeed + index;
+                obj.position.x = Math.cos(angle) * obj.userData.orbitRadius;
+                obj.position.z = Math.sin(angle) * obj.userData.orbitRadius;
+            });
+            
+            // Animate particles
+            const particlePositions = particles.geometry.attributes.position.array;
+            const particleVelocities = particles.geometry.attributes.velocity.array;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                
+                particlePositions[i3] += particleVelocities[i3];
+                particlePositions[i3 + 1] += particleVelocities[i3 + 1];
+                particlePositions[i3 + 2] += particleVelocities[i3 + 2];
+                
+                // Reset particles that fall too low
+                if (particlePositions[i3 + 1] < -20) {
+                    particlePositions[i3] = (Math.random() - 0.5) * 100;
+                    particlePositions[i3 + 1] = Math.random() * 20 + 30;
+                    particlePositions[i3 + 2] = (Math.random() - 0.5) * 100;
+                }
+            }
+            
+            particles.geometry.attributes.position.needsUpdate = true;
+            
+            // Gentle camera movement
+            camera.position.x = Math.sin(time * 0.1) * 5;
+            camera.position.y = 5 + Math.cos(time * 0.15) * 3;
+            camera.lookAt(0, 0, 0);
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Add some interactive elements
+        document.addEventListener('mousemove', (event) => {
+            const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            // Subtle camera movement based on mouse
+            camera.position.x += mouseX * 0.5;
+            camera.position.y += mouseY * 0.3;
+        });
+        
+        // Initialize music player
+        updateTrackInfo();
+        
+        // Add some glitch effects to random elements
+        setInterval(() => {
+            const glitchElements = document.querySelectorAll('.glitch');
+            glitchElements.forEach(element => {
+                if (Math.random() < 0.3) {
+                    element.style.textShadow = `
+                        ${Math.random() * 4 - 2}px ${Math.random() * 4 - 2}px 0 var(--error-color),
+                        ${Math.random() * 4 - 2}px ${Math.random() * 4 - 2}px 0 var(--success-color)
+                    `;
+                    setTimeout(() => {
+                        element.style.textShadow = '';
+                    }, 100);
+                }
+            });
+        }, 2000);
+    </script>
+</body>
+</html>
